@@ -134,6 +134,52 @@ _notes: Script and instructions contributed by 3d-gussner. Use at your own risk.
 - run `bash PF-build.sh`
 - follow the instructions
 
+## Docker
+[Download and install Docker](https://docs.docker.com/install/) on your system.
+Docker allows you to run a container which builds the hex files from source using the following
+steps regardless of what system you use.
+
+1) create a directory for the build, example: d:\myPrusa\build
+2) within the build directory
+
+`git clone https://github.com/FloatingCameras/Prusa-Firmware.git `
+    
+    docker run -it -v d:\myTest\build:/build --name=prusabuilder --entrypoint /bin/bash floatingcam/prusafirmware
+
+Answer the questions.  The output is put in the build\PF-build-hex directory.
+
+### Using Prusa3d/Prusa-Firmware
+To use the Prusa3D github branch simply **replace** the *PF-build.sh* file with [the one from FloatingCam/Prusa-Firmware](https://github.com/FloatingCameras/Prusa-Firmware/blob/MK3/PF-build.sh).
+
+**That is it!**
+
+#### Windows
+Windows uses CR/LF for line endings and Linux uses just LF.  This creates two problems
+which are both handled by overwriting the PF-build.sh file with the one from my fork.  
+
+When using Git on my fork the *.sh files retain the Linux line endings when downloaded.
+This addresses ./PF-build.sh failing because of the difference in line endings between
+Windows and Linux. 
+
+Furthermore, when values are extracted from the
+configuration.h file the Windows git copy there is an extra \r (CR) which must be stipped.
+Adding **| sed 's/\r//g'** to the commands eliminates the extra CR.
+```
+	FW=$(grep --max-count=1 "\bFW_VERSION\b" $SCRIPT_PATH/Firmware/Configuration.h | sed -e's/  */ /g'|cut -d '"' -f2|sed 's/\.//g'|sed 's/\r//g')
+	# Find build version in Configuration.h file and use it to generate the hex filename
+	BUILD=$(grep --max-count=1 "\bFW_COMMIT_NR\b" $SCRIPT_PATH/Firmware/Configuration.h | sed -e's/  */ /g'|cut -d ' ' -f3|sed 's/\r//g')
+	# Check if the motherboard is an EINSY and if so only one hex file will generated
+	MOTHERBOARD=$(grep --max-count=1 "\bMOTHERBOARD\b" $SCRIPT_PATH/Firmware/variants/$VARIANT.h | sed -e's/  */ /g' |cut -d ' ' -f3|sed 's/\r//g')
+	# Check development status
+	DEV_CHECK=$(grep --max-count=1 "\bFW_VERSION\b" $SCRIPT_PATH/Firmware/Configuration.h | sed -e's/  */ /g'|cut -d '"' -f2|sed 's/\.//g'|cut -d '-' -f2|sed 's/\r//g')
+```
+
+
+### Total cleanup
+`docker rm prusabuilder`
+
+`docker image rm prusafirmware`
+
 
 # 3. Automated tests
 ## Prerequisites
